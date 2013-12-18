@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Terminal=false
+Name=gDrush
+Exec=/usr/share/gdrush/gDrush
+Icon=/usr/share/gdrush/gdrush.png
+
