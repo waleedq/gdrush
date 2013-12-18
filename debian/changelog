@@ -1,0 +1,62 @@
+gdrush (1.2~saucy) saucy; urgency=low
+
+  * Fixing site add modal not showing issue
+
+ -- Waleed Qadi <qadiwaleed@gmail.com>  Sat, 15 Dec 2013 02:13:00 +0300
+
+gdrush (1.2~raring) raring; urgency=low
+
+  * Fixing site add modal not showing issue
+
+ -- Waleed Qadi <qadiwaleed@gmail.com>  Sat, 15 Dec 2013 02:13:00 +0300
+
+gdrush (1.2~quantal) quantal; urgency=low
+
+  * Fixing site add modal not showing issue
+
+ -- Waleed Qadi <qadiwaleed@gmail.com>  Sat, 15 Dec 2013 02:13:00 +0300
+
+gdrush (1.1~quantal) quantal; urgency=low
+
+  * New core rewrite based on node-webkit
+
+ -- Waleed Qadi <qadiwaleed@gmail.com>  Sat, 14 Dec 2013 17:54:00 +0300
+
+gdrush (1.1~raring) raring; urgency=low
+
+  * New core rewrite based on node-webkit
+
+ -- Waleed Qadi <qadiwaleed@gmail.com>  Sat, 14 Dec 2013 17:54:00 +0300
+
+gdrush (1.1~saucy) saucy; urgency=low
+
+  * New core rewrite based on node-webkit
+
+ -- Waleed Qadi <qadiwaleed@gmail.com>  Sat, 14 Dec 2013 17:54:00 +0300
+
+gdrush (0.2~quantal) quantal; urgency=low
+
+  * Fixing the addsite close when clicking anywhere
+
+ -- Waleed Qadi <qadiwaleed@gmail.com>  Tue, 28 Jul 2013 02:54:00 +0300
+
+
+gdrush (0.2~raring) raring; urgency=low
+
+  * Fixing the addsite close when clicking anywhere
+
+ -- Waleed Qadi <qadiwaleed@gmail.com>  Tue, 28 Jul 2013 02:49:00 +0300
+
+
+gdrush (0.1~raring) raring; urgency=low
+
+  * Initial Release for raring.
+
+ -- Waleed Qadi <qadiwaleed@gmail.com>  Tue, 26 Jul 2013 03:56:15 +0300
+
+
+gdrush (0.1) quantal; urgency=low
+
+  * Initial Release.
+
+ -- Waleed Qadi <qadiwaleed@gmail.com>  Tue, 23 Jul 2013 04:06:15 +0300
