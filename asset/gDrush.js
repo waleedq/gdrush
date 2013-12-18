@@ -240,6 +240,7 @@ var gDrush = {
   },
 
   updateSitesList: function (sitesSelector){
+    if(!sitesSelector) sitesSelector = gDrush.options.sitesSelector;
     if(typeof sitesSelector == "string") sitesSelector = $(sitesSelector);
     gDrush.sitesArray = localStorage.getObject('sites');
     if(!gDrush.sitesArray) gDrush.sitesArray = Array();
@@ -271,10 +272,9 @@ var gDrush = {
   },
 
   checkDrupalFolder: function (dir,onValid,onNotValid){
-    gDrush.validSitePath = false;
     gDrush.drushQuery('status', [], function(error, status, stderr){
-
       if(error === null){
+
         if(status.bootstrap == "Successful"){
           gDrush.validSitePath = true;
           onValid();
@@ -300,31 +300,49 @@ var gDrush = {
     var outformat = ""
     if(!gDrush.validDrushVersion && cmd != "version") return;
     if(!gDrush.commandRunning){
-      gDrush. commandRunning = true;
+      gDrush.options.spinner.css('display','block');
+      gDrush.commandRunning = true;
       if((!gDrush.drupalPath || !gDrush.validDrupal ) && !(cwd && (cmd == 'status')) && (cmd != "gdgp") && (cmd != "version")) return;
       if(!args) args = "";
       if(!cwd) cwd = gDrush.drupalPath;
       if(format) outformat = "--format=" + format;
       if(typeof gDrush.options.spinner == "string") gDrush.options.spinner = $(gDrush.options.spinner)
-      gDrush.options.spinner.css('display','block')
-      child = exec("drush -i " + gDrush.includePath + " " + gDrush.siteAlias + " " + cmd + " " + args.join(" ") + " "+ outformat + " ", {'cwd':cwd}, function (error, stdout, stderr) {
+      child = exec("drush -i " + gDrush.includePath + " " + gDrush.siteAlias + " " + cmd + " " + args.join(" ") + " "+ outformat + " ", {'cwd':cwd,maxBuffer:200*2048}, function (error, stdout, stderr) {
         if (error !== null) {
           console.log('exec error: ' + error);
         }else{
-          gDrush.options.outputArea.append('<tr><td><pre>' + stderr + '</pre></td></tr>'); 
-          gDrush.options.outputArea.parents('.panel-body').scrollTop(gDrush.options.outputArea[0].scrollHeight);
+          if(stderr){
+            gDrush.options.outputArea.append('<tr><td><pre>' + stderr + '</pre></td></tr>'); 
+            gDrush.options.outputArea.parents('.panel-body').scrollTop(gDrush.options.outputArea[0].scrollHeight);
+          }
         }
         if(typeof callback == "function"){
-          if(format == 'json' && stdout) stdout = JSON.parse(stdout);
-          callback(error,stdout,stderr);
+          if(format == 'json' && stdout) {
+            try{
+              stdout = JSON.parse(stdout);
+              callback(error,stdout,stderr);
+            }
+            catch(err){
+              console.log(err)
+            }
+          }
+        }else if(stdout){
+          gDrush.options.outputArea.append('<tr><td><pre>' + stdout + '</pre></td></tr>'); 
+          gDrush.options.outputArea.parents('.panel-body').scrollTop(gDrush.options.outputArea[0].scrollHeight);
+        }
+      });
+
+      child.on('close',function(){
+        if(gDrush.commandsQueue.length > 0){
+          gDrush.options.spinner.css('display','block');
+          gDrush.commandRunning = false;
+          var command = gDrush.commandsQueue.shift();
+          gDrush.runCommand(command.cmd, command.args, command.callback, command.cwd, command.format);
+        }else{
+          gDrush.options.spinner.css('display','none');
         }
         gDrush.commandRunning = false;
-        if(gDrush.commandsQueue.length > 0){
-          command = gDrush.commandsQueue.shift();
-          gDrush.runCommand(command.cmd, command.args, command.callback, command.cwd, command.format);
-        }
-        gDrush.options.spinner.css('display','none');
-      });
+      })
     }else{
       var command = {cmd:cmd, args:args, callback: callback, cwd:cwd, format:format};
       gDrush.commandsQueue.push(command);

@@ -63,7 +63,7 @@ $(function(){
     if(validateAddSite){
       var info = {name:$('#site-name').val(), path:$('#site-path').val()};
       gDrush.sitesArray.push(info);
-      localStorage.setObject('sites',sitesArray);
+      localStorage.setObject('sites',gDrush.sitesArray);
       gDrush.updateSitesList();
       $('#add-site-modal').modal('hide');
     }
@@ -86,6 +86,10 @@ $(function(){
 
     chooser.trigger('click');
   })
+
+  process.on('uncaughtException', function (err) {
+    console.log('Caught exception: ' + err);
+  });
 
 });
 
