@@ -133,6 +133,7 @@ var gDrush = {
             }
           }
           gDrush.updateModulesList(gDrush.options.modulesTable);
+          console.log('hide');
           modal.modal('hide');
         }
       });
@@ -198,6 +199,7 @@ var gDrush = {
           }else{
             gDrush.updateModulesList(gDrush.options.modulesTable, true);
           }
+          console.log('hide');
           modal.modal('hide');
         }
       });
@@ -320,12 +322,12 @@ var gDrush = {
           if(format == 'json' && stdout) {
             try{
               stdout = JSON.parse(stdout);
-              callback(error,stdout,stderr);
             }
             catch(err){
               console.log(err)
             }
           }
+          callback(error,stdout,stderr);
         }else if(stdout){
           gDrush.options.outputArea.append('<tr><td><pre>' + stdout + '</pre></td></tr>'); 
           gDrush.options.outputArea.parents('.panel-body').scrollTop(gDrush.options.outputArea[0].scrollHeight);
