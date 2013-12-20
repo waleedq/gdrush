@@ -21,33 +21,49 @@ var gDrush = {
     panelsWrapper:'',
     tabsWrapper:'',
     outputArea:'',
-    spinner:''
+    spinner:'',
+    errorModal:'',
   },
 
-  init: function (options, callback){
+  init: function (options){
     if(options) gDrush.options = options;
     if(!gDrush.options) return;
+    gDrush.checkDrush(function(){
+      gDrush._init();
+    },
+    function(){
+      gDrush.validDrushVersion = false;
+      $('.main').hide();
+      var modal = $('#error-modal').clone();
+      var title = 'Drush could not be found.';
+      var msg = "<div>It seems that drush is not installed on this machine</div>"
+      msg += "<div>Please install the latest drush version, drush version must be at least <b>" + gDrush.requriedDrushVersion + "</b>.</div>"
+      var modal = gDrush.errorModal(title ,msg, [
+        {id:'ok', text:'Ok', callback: function(modal){ gDrush.gui.App.quit();}}
+      ]);
+      modal.modal('show');
+    });
+  },
+
+  _init: function (){
     gDrush.updateSitesList(gDrush.options.sitesSelector);
     gDrush.options.panelsWrapper.html('');
     gDrush.options.tabsWrapper.html('');
-    gDrush.drushQuery('version', [],function(error, version, stderr){
-      version = version.split('.');
-      version = parseInt(version[0]);
-      if(version >= gDrush.requriedDrushVersion){  
-        $('.main').show();
-      }else{
-        gDrush.validDrushVersion = false;
-        $('.main').hide();
-        var modal = $('#error-modal').clone();
-        modal.find('.modal-title').text('Wrong drush version.');
-        var msg = "<div>Drush version must be <b>" + gDrush.requriedDrushVersion + "</b> or greater your current drush version is <b>" + version + "</b></div>"
-        msg += "<div>Please update your drush version</div>"
-        modal.find('.modal-body').html(msg);
-        modal.find('#ok').on('click',function(){
-          gDrush.gui.App.quit();
-        });
-        modal.modal('show');
-      }
+    gDrush.checkDrushVersion(function (version){
+      $('.main').show();
+    },
+    function (version){
+      gDrush.validDrushVersion = false;
+      $('.main').hide();
+      var modal = $('#error-modal').clone();
+      modal.find('.modal-title').text('Wrong drush version.');
+      var msg = "<div>Drush version must be <b>" + gDrush.requriedDrushVersion + "</b> or greater your current drush version is <b>" + version + "</b></div>"
+      msg += "<div>Please update your drush version</div>"
+      modal.find('.modal-body').html(msg);
+      modal.find('#ok').on('click',function(){
+        gDrush.gui.App.quit();
+      });
+      modal.modal('show');
     });
     gDrush.drushQuery('gdgp', [], function(error, panels, stderr){
       if(error === null){
@@ -60,9 +76,6 @@ var gDrush = {
         gDrush.changeSite(gDrush.options.sitesSelector.val(),gDrush.options.statusTable, gDrush.options.modulesTable);
       }
     });
-    if(typeof callback == "function"){
-      callback();
-    }
   },
 
   renderPanel: function (panelInfo){
@@ -72,6 +85,21 @@ var gDrush = {
     panel.append('<div class="panel-body">' + panelInfo.html + '</div>');
     wrapper.append(panel);
     return wrapper.html();
+  },
+
+  errorModal: function (title, msg, buttons){
+    var modal = gDrush.options.errorModal.clone();
+    modal.find('.modal-title').text(title);
+    modal.find('.modal-body').html(msg);
+    for(var key in buttons){
+      var button = buttons[key];
+      var buttonMarkup = '<button id="' + button.id + '" type="button" class="btn btn-primary">' +  button.text + '</button>'
+      modal.find('.modal-footer').append(buttonMarkup);
+      modal.find('#'+button.id).on('click',function(){
+        button.callback(modal);
+      })
+    }
+    return modal;
   },
 
   changeSite: function (drupalPath, statusTable, modulesTable, updateAliasList){
@@ -104,7 +132,35 @@ var gDrush = {
   changeAlias: function(siteAlias){
     if(!siteAlias) siteAlias = "@self";
     gDrush.siteAlias = siteAlias;
-    gDrush.changeSite(gDrush.drupalPath, gDrush.options.statusTable, gDrush.options.modulesTable,false);
+    gDrush.checkDrush(function(){
+      gDrush.checkDrushVersion(function (version){
+        gDrush.changeSite(gDrush.drupalPath, gDrush.options.statusTable, gDrush.options.modulesTable,false);
+      },
+      function (version){
+        gDrush.validDrushVersion = false;
+        gDrush.siteAlias = "@self";
+        gDrush.options.aliasSelector.val("@self");
+        var title = 'Wrong drush version ' + siteAlias ;
+        var msg = "<div>Drush version must be <b>" + gDrush.requriedDrushVersion + "</b> or greater the current drush version " + siteAlias + " is <b>" + version + "</b></div>"
+        msg += "<div>Please update your drush version " + siteAlias + "</div>"
+        modal = gDrush.errorModal(title ,msg, [
+          {id:'ok', text:'Ok', callback: function(modal){ modal.modal('hide');}}
+        ]);
+        modal.modal('show');
+      });
+    },
+    function(stdout){
+      gDrush.validDrushVersion = false;
+      var modal = $('#error-modal').clone();
+      var title = 'Something went wrong';
+      var msg = "<div>Something went wrong on the alias server, this is the returned error message:</div>"
+      msg += "<div>" + stdout +"</div>"
+      modal.find('.modal-body').html(msg);
+      modal = gDrush.errorModal(title ,msg, [
+          {id:'ok', text:'Ok', callback: function(modal){ modal.modal('hide'); }}
+      ]);
+      modal.modal('show');
+    });
   },
 
   disableModule: function(module){
@@ -247,10 +303,21 @@ var gDrush = {
     gDrush.sitesArray = localStorage.getObject('sites');
     if(!gDrush.sitesArray) gDrush.sitesArray = Array();
     sitesSelector.html('');
-    for(var key in gDrush.sitesArray){
-      var site = gDrush.sitesArray[key];
-      var option = $('<option value="' + site.path + '">' + site.name + '</div>')
-      sitesSelector.append(option);
+    if(gDrush.sitesArray.length > 0){
+      for(var key in gDrush.sitesArray){
+        var site = gDrush.sitesArray[key];
+        var option = $('<option value="' + site.path + '">' + site.name + '</div>')
+        sitesSelector.append(option);
+      }
+    }else{
+      gDrush.options.addSiteModal.find('.modal-title').text("Please add a drupal site to start using gDrush.")
+      gDrush.options.addSiteModal.find(".close-modal").hide();
+      var exit = '<button type="button" class="btn btn-default exit">Exit</button>'
+      gDrush.options.addSiteModal.find('.modal-footer').append(exit);
+      gDrush.options.addSiteModal.find('.exit').on('click',function(){
+        gDrush.gui.App.quit();
+      })
+      gDrush.options.addSiteModal.modal('show');
     }
   },
 
@@ -273,6 +340,30 @@ var gDrush = {
     });
   },
 
+  checkDrush: function (onValid,onNotValid){
+    gDrush.drushQuery('version', [],function(error, stdout, stderr){
+      if(error === null){  
+        onValid();
+      }else{
+        onNotValid(stdout);
+      }
+    },"","");
+  },
+
+  checkDrushVersion: function (onValid,onNotValid){
+    gDrush.drushQuery('version', [],function(error, version, stderr){
+      version = version.split(':');
+      version = version[1].trim();
+      version = version.split(".");
+      version = parseInt(version[0]);
+      if(version >= gDrush.requriedDrushVersion){  
+        onValid(version);
+      }else{
+        onNotValid(version);
+      }
+    },"","");
+  },
+
   checkDrupalFolder: function (dir,onValid,onNotValid){
     gDrush.drushQuery('status', [], function(error, status, stderr){
       if(error === null){
@@ -288,7 +379,7 @@ var gDrush = {
   },
 
   drushQuery: function (cmd, args, callback, cwd, format){
-    if(!format) format = 'json';
+    if(format == undefined) format = 'json';
     gDrush.runCommand(cmd, args, callback, cwd, format);
   },
 
@@ -312,6 +403,7 @@ var gDrush = {
       child = exec("drush -i " + gDrush.includePath + " " + gDrush.siteAlias + " " + cmd + " " + args.join(" ") + " "+ outformat + " ", {'cwd':cwd,maxBuffer:200*2048}, function (error, stdout, stderr) {
         if (error !== null) {
           console.log('exec error: ' + error);
+          child.kill();
         }else{
           if(stderr){
             gDrush.options.outputArea.append('<tr><td><pre>' + stderr + '</pre></td></tr>'); 
