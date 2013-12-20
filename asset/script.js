@@ -29,7 +29,9 @@ $(function(){
     panelsWrapper:$('.panels-wrapper'), 
     sitesSelector:$('#sites-selector'), 
     aliasSelector:$('#alias-selector'), 
+    addSiteModal:$('#add-site-modal'),
     outputArea:$('#output-area tbody'),
+    errorModal:$('#error-modal'),
     spinner:$('#cmd-spinner')
   });
 
@@ -47,8 +49,16 @@ $(function(){
   });
 
   $(document).on('click','input[data-module]',function(){
-    if( !$(this).is(':checked') ) gDrush.disableModule($(this).attr('data-module'));
-    if( $(this).is(':checked') ) gDrush.enableModule($(this).attr('data-module'));
+    if( !$(this).is(':checked') ){
+      gDrush.disableModule($(this).attr('data-module'));
+      $(this).prop('checked',true);
+      return;
+    }
+    if( $(this).is(':checked') ) {
+      gDrush.enableModule($(this).attr('data-module'));
+      $(this).prop('checked',false);
+      return;
+    }
   })
 
   $('.modal').on('hide.bs.modal', function (e) {
@@ -65,6 +75,14 @@ $(function(){
       gDrush.sitesArray.push(info);
       localStorage.setObject('sites',gDrush.sitesArray);
       gDrush.updateSitesList();
+      if(gDrush.sitesArray.length == 1){
+        gDrush.options.addSiteModal.find('.modal-title').text("Add new site")
+        gDrush.options.addSiteModal.find(".close-modal").show();
+        gDrush.options.addSiteModal.find('.exit').remove();
+        gDrush.changeSite(gDrush.sitesArray[0].path,$('#status-table'),$('#modules-table'));
+      }
+      $('#site-name').val("");
+      $('#site-path').val("");
       $('#add-site-modal').modal('hide');
     }
   });
@@ -77,7 +95,7 @@ $(function(){
     gDrush.changeAlias($(this).val());
   });
 
-  $('button[data-file]').on('click',function(){
+  $(document).on('click','button[data-file]',function(){
     var chooser = $("#"+$(this).attr('data-file'))
     chooser.change(function(evt) {
       $('#site-path').val($(this).val());

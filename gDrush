@@ -12,4 +12,4 @@ else
 fi
 export LD_LIBRARY_PATH
 
-exec -a "$0" "$HERE/gdrush-bin"  "$@"
+exec -a "$0" "$HERE/gdrush-bin" "--disable-gpu" "$@"
